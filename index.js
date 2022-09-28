@@ -40,6 +40,12 @@ const configuration_workflow = () =>
                   }
                 },
               },
+              {
+                name: "run_where",
+                label: "Run where",
+                input_type: "select",
+                options: ["Server", "Client page"],
+              },
             ],
           });
         },
@@ -52,10 +58,20 @@ const get_state_fields = () => []
 const run = async (
   table_id,
   viewname,
-  { code },
+  { code, run_where },
   state,
   extraArgs
 ) => {
+  if (run_where === "Client page") {
+    const rndid = Math.floor(Math.random() * 16777215).toString(16);
+    return markupTags.div({ id: `jsv${rndid}` }) + markupTags.script(markupTags.domReady(`
+    const out = (()=>{
+      ${code}
+    })()
+    if(typeof out !== "undefined" && out !==null)
+	    $('#jsv${rndid}').html(out);`))
+  }
+
   const user = extraArgs.req.user
   const Actions = {};
   Object.entries(getState().actions).forEach(([k, v]) => {
