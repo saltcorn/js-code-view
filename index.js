@@ -1,12 +1,4 @@
-const {
-  input,
-  div,
-  text,
-  script,
-  domReady,
-  style,
-  button,
-} = require("@saltcorn/markup/tags");
+const markupTags = require("@saltcorn/markup/tags");
 const View = require("@saltcorn/data/models/view");
 const Workflow = require("@saltcorn/data/models/workflow");
 const Table = require("@saltcorn/data/models/table");
@@ -87,13 +79,15 @@ const run = async (
   }
   const emitEvent = (eventType, channel, payload) =>
     Trigger.emitEvent(eventType, channel, user, payload);
-  const fetchJSON = async (...args) => await (await fetch(...args)).json();
+
   const f = vm.runInNewContext(`async () => {${code}\n}`, {
     Table,
     user,
     console,
     Actions,
     emitEvent,
+    markupTags,
+    db,
     req: extraArgs.req,
     state,
     ...getState().function_context,
