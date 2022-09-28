@@ -1,0 +1,22 @@
+{
+  "name": "@saltcorn/js-code-view",
+  "version": "0.1.0",
+  "description": "Generate Saltcorn view output from JavaScript code",
+  "main": "index.js",
+  "dependencies": {
+    "@saltcorn/markup": "^0.4.1",
+    "@saltcorn/data": "^0.4.1"
+  },
+  "author": "Tom Nielsen",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^25.1.0"
+  },
+  "repository": "github:saltcorn/js-code-view",
+  "jest": {
+    "testEnvironment": "node"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
