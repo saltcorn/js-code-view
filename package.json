@@ -1,11 +1,12 @@
 {
-  "name": "@saltcorn/js-code-view",
+  "name": "@saltcorn/code-view",
   "version": "0.1.1",
-  "description": "Generate Saltcorn view output from JavaScript code",
+  "description": "Generate Saltcorn view output from code",
   "main": "index.js",
   "dependencies": {
-    "@saltcorn/markup": "^0.4.1",
-    "@saltcorn/data": "^0.4.1"
+    "@saltcorn/markup": "^0.8.1",
+    "@saltcorn/data": "^0.8.1",
+    "handlebars": "4.7.7"
   },
   "author": "Tom Nielsen",
   "license": "MIT",
