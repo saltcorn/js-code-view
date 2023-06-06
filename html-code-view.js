@@ -4,7 +4,10 @@ const Form = require("@saltcorn/data/models/form");
 const Handlebars = require("handlebars");
 const { getState, features } = require("@saltcorn/data/db/state");
 
-const { stateFieldsToWhere } = require("@saltcorn/data/plugin-helper");
+const {
+  stateFieldsToWhere,
+  readState,
+} = require("@saltcorn/data/plugin-helper");
 const { mergeIntoWhere } = require("@saltcorn/data/utils");
 const vm = require("vm");
 
@@ -53,8 +56,8 @@ const run = async (
     where: qstate,
     //joinFields: buildJoinFields(event_color),
   });
-  const template = Handlebars.compile(code);
-  if (row_count === "Many") return template(rows);
+  const template = Handlebars.compile(code || "");
+  if (row_count === "Many") return template({ rows });
   else {
     if (rows.length === 0) return "";
     const row = rows[0];
