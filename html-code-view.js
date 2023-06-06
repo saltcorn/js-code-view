@@ -3,6 +3,7 @@ const Table = require("@saltcorn/data/models/table");
 const Form = require("@saltcorn/data/models/form");
 const Handlebars = require("handlebars");
 const { getState, features } = require("@saltcorn/data/db/state");
+const { div } = require("@saltcorn/markup/tags");
 
 const {
   stateFieldsToWhere,
@@ -16,7 +17,9 @@ const configuration_workflow = () =>
     steps: [
       {
         name: "Code",
-        form: () => {
+        form: (context) => {
+          const table = Table.findOne({ id: context.table_id });
+          const fields = table.fields;
           return new Form({
             fields: [
               {
@@ -31,6 +34,24 @@ const configuration_workflow = () =>
                 label: "HTML Code",
                 input_type: "code",
                 attributes: { mode: "text/html" },
+              },
+              {
+                input_type: "section_header",
+                label: " ",
+                sublabel: div(
+                  "Use handlebars to access table rows. Example: <code>{{#each rows}}&lt;h1&gt;{{this.name}}&lt;/h1&gt;{{/each}}</code>"
+                ),
+                showIf: { row_count: "Many" },
+              },
+
+              {
+                input_type: "section_header",
+                label: " ",
+                sublabel: div(
+                  "Use handlebars to access rows. Example: <code>&lt;h1&gt;{{name}}&lt;/h1&gt;</code>. Variables in scope: " +
+                    fields.map((f) => `<code>${f.name}</code>`).join(", ")
+                ),
+                showIf: { row_count: "Single" },
               },
             ],
           });
