@@ -1,6 +1,7 @@
 const Workflow = require("@saltcorn/data/models/workflow");
 const Table = require("@saltcorn/data/models/table");
 const Form = require("@saltcorn/data/models/form");
+const { freeVariables } = require("@saltcorn/data/models/expression");
 const Handlebars = require("handlebars");
 const { getState, features } = require("@saltcorn/data/db/state");
 const { div } = require("@saltcorn/markup/tags");
@@ -8,6 +9,7 @@ const { div } = require("@saltcorn/markup/tags");
 const {
   stateFieldsToWhere,
   readState,
+  add_free_variables_to_joinfields,
 } = require("@saltcorn/data/plugin-helper");
 const { mergeIntoWhere } = require("@saltcorn/data/utils");
 const vm = require("vm");
@@ -73,10 +75,21 @@ const run = async (
   const fields = await table.getFields();
   readState(state, fields);
   const qstate = await stateFieldsToWhere({ fields, state });
+  const joinFields = {};
+  const freeVars = new Set([]);
+  const hbVars = code.match(/{{[{]?(.*?)[}]?}}/g);
+  hbVars.forEach((hbVar) => {
+    freeVariables(hbVar.replace(/{{/g, "").replace(/}}/g, "")).forEach((fv) =>
+      freeVars.add(fv)
+    );
+  });
+  add_free_variables_to_joinfields(freeVars, joinFields, fields);
+
   const rows = await table.getJoinedRows({
     where: qstate,
-    //joinFields: buildJoinFields(event_color),
+    joinFields,
   });
+
   const template = Handlebars.compile(code || "");
   if (row_count === "Many") return template({ rows });
   else {
