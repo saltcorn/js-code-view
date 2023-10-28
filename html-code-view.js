@@ -62,7 +62,13 @@ const configuration_workflow = () =>
     ],
   });
 
-const get_state_fields = () => [];
+const get_state_fields = () => [
+  {
+    name: "id",
+    type: "Integer",
+    required: false,
+  },
+];
 
 const run = async (
   table_id,
