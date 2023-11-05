@@ -18,14 +18,16 @@ describe("html code view", () => {
     const table = Table.findOne("books");
     const view = await View.create({
       name: "bookhtmlview",
+      viewtemplate: "HtmlCodeView",
       table_id: table.id,
       configuration: {
         row_count: "Single",
         code: `<h1>{{author}}</h1>`,
       },
+      min_role: 100,
     });
     const result = await view.run({ id: 1 }, mockReqRes);
 
-    expect(result).toBe(`<h1>Merman Melville</h1>`);
+    expect(result).toBe(`<h1>Herman Melville</h1>`);
   });
 });
