@@ -108,6 +108,7 @@ const run = async (
     user,
     console,
     Actions,
+    View,
     emitEvent,
     markupTags,
     db,
