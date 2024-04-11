@@ -75,8 +75,23 @@ const run = async (
   viewname,
   { code, row_count },
   state,
-  extraArgs
+  extraArgs,
+  queriesObj
 ) => {
+  const rows = queriesObj?.get_rows_query
+    ? await queriesObj.get_rows_query(state)
+    : await getRowsImpl(table_id, { code }, state);
+
+  const template = Handlebars.compile(code || "");
+  if (row_count === "Many") return template({ rows });
+  else {
+    if (rows.length === 0) return "";
+    const row = rows[0];
+    return template({ ...row, row });
+  }
+};
+
+const getRowsImpl = async (table_id, { code }, state) => {
   const table = await Table.findOne(table_id);
   const fields = await table.getFields();
   readState(state, fields);
@@ -90,19 +105,10 @@ const run = async (
     );
   });
   add_free_variables_to_joinfields(freeVars, joinFields, fields);
-
-  const rows = await table.getJoinedRows({
+  return await table.getJoinedRows({
     where: qstate,
     joinFields,
   });
-
-  const template = Handlebars.compile(code || "");
-  if (row_count === "Many") return template({ rows });
-  else {
-    if (rows.length === 0) return "";
-    const row = rows[0];
-    return template({ ...row, row });
-  }
 };
 
 module.exports = {
@@ -111,4 +117,9 @@ module.exports = {
   run,
   get_state_fields,
   configuration_workflow,
+  queries: ({ table_id, configuration: { code } }) => ({
+    async get_rows_query(state) {
+      return await getRowsImpl(table_id, { code }, state);
+    },
+  }),
 };
