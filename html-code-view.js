@@ -99,11 +99,13 @@ const getRowsImpl = async (table_id, { code }, state) => {
   const joinFields = {};
   const freeVars = new Set([]);
   const hbVars = code.match(/{{[{]?(.*?)[}]?}}/g);
-  hbVars.forEach((hbVar) => {
-    freeVariables(hbVar.replace(/{{/g, "").replace(/}}/g, "")).forEach((fv) =>
-      freeVars.add(fv)
-    );
-  });
+  if (hbVars) {
+    hbVars.forEach((hbVar) => {
+      freeVariables(hbVar.replace(/{{/g, "").replace(/}}/g, "")).forEach((fv) =>
+        freeVars.add(fv)
+      );
+    });
+  }
   add_free_variables_to_joinfields(freeVars, joinFields, fields);
   return await table.getJoinedRows({
     where: qstate,
