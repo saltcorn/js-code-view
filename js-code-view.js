@@ -62,7 +62,8 @@ const run = async (
   viewname,
   { code, run_where },
   state,
-  extraArgs
+  extraArgs,
+  queriesObj
 ) => {
   if (run_where === "Client page") {
     const rndid = Math.floor(Math.random() * 16777215).toString(16);
@@ -78,8 +79,13 @@ const run = async (
       )
     );
   }
+  return queriesObj?.runCodeQuery
+    ? await queriesObj.runCodeQuery(state)
+    : await runCodeImpl({ code }, state, extraArgs.req);
+};
 
-  const user = extraArgs.req.user;
+const runCodeImpl = async ({ code }, state, req) => {
+  const user = req.user;
   const Actions = {};
   Object.entries(getState().actions).forEach(([k, v]) => {
     Actions[k] = (args = {}) => {
@@ -112,7 +118,7 @@ const run = async (
     emitEvent,
     markupTags,
     db,
-    req: extraArgs.req,
+    req: req,
     state,
     ...getState().function_context,
   });
@@ -126,4 +132,9 @@ module.exports = {
   run,
   get_state_fields,
   configuration_workflow,
+  queries: ({ configuration: { code }, req }) => ({
+    async runCodeQuery(state) {
+      return await runCodeImpl({ code }, state, req);
+    },
+  }),
 };

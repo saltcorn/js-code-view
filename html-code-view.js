@@ -75,26 +75,12 @@ const run = async (
   viewname,
   { code, row_count },
   state,
-  extraArgs
+  extraArgs,
+  queriesObj
 ) => {
-  const table = await Table.findOne(table_id);
-  const fields = await table.getFields();
-  readState(state, fields);
-  const qstate = await stateFieldsToWhere({ fields, state });
-  const joinFields = {};
-  const freeVars = new Set([]);
-  const hbVars = code.match(/{{[{]?(.*?)[}]?}}/g);
-  hbVars.forEach((hbVar) => {
-    freeVariables(hbVar.replace(/{{/g, "").replace(/}}/g, "")).forEach((fv) =>
-      freeVars.add(fv)
-    );
-  });
-  add_free_variables_to_joinfields(freeVars, joinFields, fields);
-
-  const rows = await table.getJoinedRows({
-    where: qstate,
-    joinFields,
-  });
+  const rows = queriesObj?.get_rows_query
+    ? await queriesObj.get_rows_query(state)
+    : await getRowsImpl(table_id, { code }, state);
 
   const template = Handlebars.compile(code || "");
   if (row_count === "Many") return template({ rows });
@@ -105,10 +91,37 @@ const run = async (
   }
 };
 
+const getRowsImpl = async (table_id, { code }, state) => {
+  const table = await Table.findOne(table_id);
+  const fields = await table.getFields();
+  readState(state, fields);
+  const qstate = await stateFieldsToWhere({ fields, state });
+  const joinFields = {};
+  const freeVars = new Set([]);
+  const hbVars = code.match(/{{[{]?(.*?)[}]?}}/g);
+  if (hbVars) {
+    hbVars.forEach((hbVar) => {
+      freeVariables(hbVar.replace(/{{/g, "").replace(/}}/g, "")).forEach((fv) =>
+        freeVars.add(fv)
+      );
+    });
+  }
+  add_free_variables_to_joinfields(freeVars, joinFields, fields);
+  return await table.getJoinedRows({
+    where: qstate,
+    joinFields,
+  });
+};
+
 module.exports = {
   name: "HtmlCodeView",
   display_state_form: false,
   run,
   get_state_fields,
   configuration_workflow,
+  queries: ({ table_id, configuration: { code } }) => ({
+    async get_rows_query(state) {
+      return await getRowsImpl(table_id, { code }, state);
+    },
+  }),
 };
