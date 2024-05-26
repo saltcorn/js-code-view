@@ -65,6 +65,7 @@ const run = async (
   extraArgs,
   queriesObj
 ) => {
+  const table = Table.findOne(table_id);
   if (run_where === "Client page") {
     const rndid = Math.floor(Math.random() * 16777215).toString(16);
     return (
@@ -89,7 +90,7 @@ const runCodeImpl = async ({ code }, state, req) => {
   const Actions = {};
   Object.entries(getState().actions).forEach(([k, v]) => {
     Actions[k] = (args = {}) => {
-      v.run({ row, table, user, configuration: args, ...args });
+      v.run({ user, configuration: args, ...args });
     };
   });
   const trigger_actions = await Trigger.find({
@@ -101,18 +102,27 @@ const runCodeImpl = async ({ code }, state, req) => {
       state_action.run({
         configuration: trigger.configuration,
         user,
-        ...rest,
         ...args,
       });
     };
   }
   const emitEvent = (eventType, channel, payload) =>
     Trigger.emitEvent(eventType, channel, user, payload);
-
+  const output = [];
+  const fakeConsole = {
+    log(...s) {
+      console.log(...s);
+      output.push([s, false]);
+    },
+    error(...s) {
+      console.error(...s);
+      output.push([s, true]);
+    },
+  };
   const f = vm.runInNewContext(`async () => {${code}\n}`, {
     Table,
     user,
-    console,
+    console: fakeConsole,
     Actions,
     View,
     emitEvent,
@@ -122,7 +132,18 @@ const runCodeImpl = async ({ code }, state, req) => {
     state,
     ...getState().function_context,
   });
-  return await f();
+  const runRes = await f();
+  if (output.length > 0 && typeof runRes === "string")
+    return (
+      runRes +
+      `<script>${output
+        .map(
+          ([s, isError]) =>
+            `console.${isError ? "error" : "log"}(...${JSON.stringify(s)})`
+        )
+        .join("\n")}</script>`
+    );
+  else return runRes;
 };
 
 module.exports = {
