@@ -119,31 +119,39 @@ const runCodeImpl = async ({ code }, state, req) => {
       output.push([s, true]);
     },
   };
-  const f = vm.runInNewContext(`async () => {${code}\n}`, {
-    Table,
-    user,
-    console: fakeConsole,
-    Actions,
-    View,
-    emitEvent,
-    markupTags,
-    db,
-    req: req,
-    state,
-    ...getState().function_context,
-  });
-  const runRes = await f();
-  if (output.length > 0 && typeof runRes === "string")
-    return (
-      runRes +
-      `<script>${output
-        .map(
-          ([s, isError]) =>
-            `console.${isError ? "error" : "log"}(...${JSON.stringify(s)})`
-        )
-        .join("\n")}</script>`
-    );
-  else return runRes;
+  try {
+    const f = vm.runInNewContext(`async () => {${code}\n}`, {
+      Table,
+      user,
+      console: fakeConsole,
+      Actions,
+      View,
+      emitEvent,
+      markupTags,
+      db,
+      req: req,
+      state,
+      ...getState().function_context,
+    });
+    const runRes = await f();
+    if (output.length > 0 && typeof runRes === "string")
+      return (
+        runRes +
+        `<script>${output
+          .map(
+            ([s, isError]) =>
+              `console.${isError ? "error" : "log"}(...${JSON.stringify(s)})`
+          )
+          .join("\n")}</script>`
+      );
+    else return runRes;
+  } catch (err) {
+    if (output.length > 0)
+      err.message += `\n\nConsole output:\n\n${output
+        .map(([s, isError]) => s.map((x) => `${JSON.stringify(x)}`).join(" "))
+        .join("\n")}`;
+    throw err;
+  }
 };
 
 module.exports = {
