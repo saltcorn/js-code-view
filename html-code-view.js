@@ -19,8 +19,8 @@ const configuration_workflow = () =>
     steps: [
       {
         name: "Code",
-        form: (context) => {
-          const table = Table.findOne({ id: context.table_id });
+        form: async (context) => {
+          const table = await Table.findOne({ id: context.table_id });
           const fields = table.fields;
           return new Form({
             fields: [
@@ -45,7 +45,6 @@ const configuration_workflow = () =>
                 ),
                 showIf: { row_count: "Many" },
               },
-
               {
                 input_type: "section_header",
                 label: " ",
@@ -91,6 +90,26 @@ const run = async (
   }
 };
 
+const extractVariables = (template) => {
+  const ast = Handlebars.parse(template);
+  const variables = new Set();
+
+  const extractFromNode = (node) => {
+    if (node.type === 'MustacheStatement' || node.type === 'BlockStatement') {
+      variables.add(node.path.original);
+    }
+    if (node.program) {
+      node.program.body.forEach(extractFromNode);
+    }
+    if (node.inverse) {
+      node.inverse.body.forEach(extractFromNode);
+    }
+  };
+
+  ast.body.forEach(extractFromNode);
+  return variables;
+};
+
 const getRowsImpl = async (table_id, { code }, state) => {
   const table = await Table.findOne(table_id);
   const fields = await table.getFields();
@@ -98,14 +117,13 @@ const getRowsImpl = async (table_id, { code }, state) => {
   const qstate = await stateFieldsToWhere({ fields, state });
   const joinFields = {};
   const freeVars = new Set([]);
-  const hbVars = code.match(/{{[{]?(.*?)[}]?}}/g);
-  if (hbVars) {
-    hbVars.forEach((hbVar) => {
-      freeVariables(hbVar.replace(/{{/g, "").replace(/}}/g, "")).forEach((fv) =>
-        freeVars.add(fv)
-      );
-    });
-  }
+  
+  // Extract Handlebars variables
+  const hbVars = extractVariables(code);
+  hbVars.forEach((hbVar) => {
+    freeVariables(hbVar).forEach((fv) => freeVars.add(fv));
+  });
+
   add_free_variables_to_joinfields(freeVars, joinFields, fields);
   return await table.getJoinedRows({
     where: qstate,
