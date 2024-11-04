@@ -95,7 +95,7 @@ const extractVariables = (template) => {
   const variables = new Set();
 
   const extractFromNode = (node) => {
-    if (node.type === 'MustacheStatement' || node.type === 'BlockStatement') {
+    if (node.type === "MustacheStatement" || node.type === "BlockStatement") {
       variables.add(node.path.original);
     }
     if (node.program) {
@@ -117,11 +117,16 @@ const getRowsImpl = async (table_id, { code }, state) => {
   const qstate = await stateFieldsToWhere({ fields, state });
   const joinFields = {};
   const freeVars = new Set([]);
-  
+
   // Extract Handlebars variables
   const hbVars = extractVariables(code);
   hbVars.forEach((hbVar) => {
-    freeVariables(hbVar).forEach((fv) => freeVars.add(fv));
+    if (reserved.has(hbVar)) return;
+    try {
+      freeVariables(hbVar).forEach((fv) => freeVars.add(fv));
+    } catch {
+      //ignore
+    }
   });
 
   add_free_variables_to_joinfields(freeVars, joinFields, fields);
@@ -130,7 +135,7 @@ const getRowsImpl = async (table_id, { code }, state) => {
     joinFields,
   });
 };
-
+const reserved = new Set(["if"]);
 module.exports = {
   name: "HtmlCodeView",
   display_state_form: false,
