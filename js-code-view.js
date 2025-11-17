@@ -1,5 +1,7 @@
 const markupTags = require("@saltcorn/markup/tags");
 const View = require("@saltcorn/data/models/view");
+const User = require("@saltcorn/data/models/user");
+const File = require("@saltcorn/data/models/file");
 const Workflow = require("@saltcorn/data/models/workflow");
 const Table = require("@saltcorn/data/models/table");
 const Trigger = require("@saltcorn/data/models/trigger");
@@ -126,6 +128,8 @@ const runCodeImpl = async ({ code }, state, req) => {
       console: fakeConsole,
       Actions,
       View,
+      User,
+      File,
       emitEvent,
       markupTags,
       db,
