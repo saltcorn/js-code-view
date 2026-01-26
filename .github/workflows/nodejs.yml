@@ -46,7 +46,7 @@ jobs:
         env:
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
           SKIP_DOCKER_IMAGE_INSTALL: "true"
-      - run: cd ../saltcorn && packages/saltcorn-cli/bin/saltcorn add-schema
+      - run: cd ../saltcorn && packages/saltcorn-cli/bin/saltcorn add-schema -f
         env:
           CI: true
           PGHOST: localhost
