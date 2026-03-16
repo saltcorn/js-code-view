@@ -35,7 +35,7 @@ const configuration_workflow = () =>
                 validator(s) {
                   try {
                     let AsyncFunction = Object.getPrototypeOf(
-                      async function () {}
+                      async function () {},
                     ).constructor;
                     AsyncFunction(s);
                     return true;
@@ -65,7 +65,7 @@ const run = async (
   { code, run_where },
   state,
   extraArgs,
-  queriesObj
+  queriesObj,
 ) => {
   const table = Table.findOne(table_id);
   if (run_where === "Client page") {
@@ -78,7 +78,7 @@ const run = async (
       ${code}
     })()
     if(typeof out !== "undefined" && out !==null)
-	    $('#jsv${rndid}').html(out);`)
+	    $('#jsv${rndid}').html(out);`),
       )
     );
   }
@@ -144,7 +144,7 @@ const runCodeImpl = async ({ code }, state, req) => {
         `<script>${output
           .map(
             ([s, isError]) =>
-              `console.${isError ? "error" : "log"}(...${JSON.stringify(s)})`
+              `console.${isError ? "error" : "log"}(...${JSON.stringify(s)})`,
           )
           .join("\n")}</script>`
       );
@@ -170,4 +170,27 @@ module.exports = {
       return await runCodeImpl({ code }, state, req);
     },
   }),
+  copilot_generate_view_prompt: getState().functions.copilot_standard_prompt
+    ? async () => {
+        const table_prompt =
+          await getState().functions.copilot_standard_prompt.run({
+            language: "javascript",
+            has_table: true,
+            has_functions: true,
+          });
+        return `You are generating JavaScript code which will return the html to be displayed as a string.
+        The view can run in two different modes: Server and Client page. 
+        
+        in both cases, you write asyncronous code that returns an HTML string. you can use await at the top level. 
+        The HTML you return will be inserted in an element on an existing page; do not include head and body tags.
+
+        If you select Client page mode, the code will run in the browser. You can use jQuery and bootstrap code. 
+        
+        If you select Server mode, you do not have access to the browser client environment, all code will be run 
+        on the server. But you can access the database with the Table object. In this case there is no associated single table.
+        
+        ${table_prompt}        
+        `;
+      }
+    : undefined,
 };
