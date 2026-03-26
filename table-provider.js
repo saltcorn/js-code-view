@@ -22,6 +22,7 @@ const runCode = async (codeStr, where, req) => {
     user: req?.user,
     console,
     require,
+    fetch,
     ...getState().function_context,
   });
   return await f();
