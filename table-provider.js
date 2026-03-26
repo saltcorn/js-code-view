@@ -3,14 +3,22 @@ const Form = require("@saltcorn/data/models/form");
 const FieldRepeat = require("@saltcorn/data/models/fieldrepeat");
 const Field = require("@saltcorn/data/models/field");
 const Table = require("@saltcorn/data/models/table");
+const View = require("@saltcorn/data/models/view");
+const User = require("@saltcorn/data/models/user");
+const File = require("@saltcorn/data/models/file");
 const { getState } = require("@saltcorn/data/db/state");
 const { mkTable } = require("@saltcorn/markup");
 const { pre, code } = require("@saltcorn/markup/tags");
 const vm = require("vm");
 
-const runCode = async (codeStr, req) => {
+const runCode = async (codeStr, where, req) => {
   const f = vm.runInNewContext(`async () => {${codeStr}\n}`, {
     Table,
+    state: where || {},
+    req,
+    View,
+    User,
+    File,
     user: req?.user,
     console,
     require,
@@ -52,7 +60,7 @@ const configuration_workflow = (req) =>
                 validator(s) {
                   try {
                     let AsyncFunction = Object.getPrototypeOf(
-                      async function () {}
+                      async function () {},
                     ).constructor;
                     AsyncFunction(s);
                     return true;
@@ -71,7 +79,7 @@ const configuration_workflow = (req) =>
           let rows = [];
           let error;
           try {
-            rows = await runCode(context.code, req);
+            rows = await runCode(context.code, {}, req);
             if (!Array.isArray(rows)) {
               error = "Code did not return an array";
               rows = [];
@@ -96,7 +104,7 @@ const configuration_workflow = (req) =>
           const tbl = previewRows.length
             ? mkTable(
                 colNames.map((name) => ({ label: name, key: name })),
-                previewRows
+                previewRows,
               )
             : "";
           const blurb = error
@@ -169,11 +177,11 @@ module.exports = {
     fields: (cfg) => cfg?.columns || [],
     get_table: (cfg) => ({
       getRows: async (where, opts) => {
-        const rows = await runCode(cfg.code, opts);
+        const rows = await runCode(cfg.code, where, opts);
         return Array.isArray(rows) ? rows : [];
       },
       countRows: async (where, opts) => {
-        const rows = await runCode(cfg.code, opts);
+        const rows = await runCode(cfg.code, where, opts);
         return Array.isArray(rows) ? rows.length : 0;
       },
     }),
